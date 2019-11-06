@@ -1,7 +1,7 @@
 # spring-boot-starter-eventbus-guava
 基于Google Guava 事件总线的 spring-boot-starter 组件，对 Guava Event 做了封装增强，支持同步事件、异步事件，让你发布、订阅事件更简单方便。支持 Spring Boot 1.x.x
 
-#特性
+# 特性
 - 使用注解订阅事件
 - 事件同时发布到同步事件总线和异步事件总线、订阅时决定同步订阅还是异步订阅
 - 异步事件在事务结束后才真正发布
