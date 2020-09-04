@@ -1,5 +1,6 @@
 package com.github.hanwei59.eventbus.exception;
 
+import cn.hutool.core.exceptions.ExceptionUtil;
 import com.github.hanwei59.eventbus.EventBusUtils;
 import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
@@ -19,6 +20,7 @@ public class EventBusSubscriberExceptionHandler implements SubscriberExceptionHa
         exceptionEvent.setParameterClassName(method.getParameterTypes()[0].getCanonicalName());
         exceptionEvent.setEvent(context.getEvent());
         exceptionEvent.setExceptionMessage(exception.getMessage());
+        exceptionEvent.setExceptionStackTrace(ExceptionUtil.stacktraceToString(exception));
         EventBusUtils.postNoTransaction(exceptionEvent);
 
         String message = "Exception thrown by subscriber method "

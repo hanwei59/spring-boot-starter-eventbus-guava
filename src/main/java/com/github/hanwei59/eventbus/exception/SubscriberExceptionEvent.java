@@ -32,4 +32,9 @@ public class SubscriberExceptionEvent extends BaseEvent {
      * 异常信息
      */
     private String exceptionMessage;
+
+    /**
+     * 异常信息堆栈
+     */
+    private String exceptionStackTrace;
 }

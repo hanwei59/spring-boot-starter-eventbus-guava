@@ -1,5 +1,6 @@
 package com.github.hanwei59.eventbus;
 
+import cn.hutool.json.JSONUtil;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,6 +25,16 @@ public class AsyncEventBusExecutor extends ThreadPoolExecutor {
         );
     }
 
+    public AsyncEventBusExecutor(int corePoolSize, int maximumPoolSize, int queueSize, String threadNamePrefix, boolean rejectedThrowException){
+        super(corePoolSize, maximumPoolSize
+                ,60
+                , TimeUnit.SECONDS
+                ,new LinkedBlockingQueue<Runnable>(queueSize)
+                ,new ThreadFactoryBuilder().setNameFormat(threadNamePrefix.concat("-thread-%d")).build()
+                ,rejectedThrowException ? new AbortPolicy() : new CallerRunsPolicy()
+        );
+    }
+
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
         super.beforeExecute(t, r);
@@ -37,33 +48,50 @@ public class AsyncEventBusExecutor extends ThreadPoolExecutor {
         startTime.remove();
         int queueSize = this.getQueue().size();
         String methodName = geTargetMethodName(r);
+        Object event = getEvent(r);
         if(t != null){
-            log.error("异步事件监听{}，执行异常！耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）"
+            log.error("异步事件监听{}，执行异常！耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）事件：{}"
                     , methodName
                     , costMillis, this.getPoolSize(), this.getCorePoolSize(), this.getMaximumPoolSize()
                     , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount()
-                    , t);
+                    , JSONUtil.toJsonStr(event), t);
         }else if(this.getPoolSize() == this.getMaximumPoolSize() && queueSize > 1){
-            log.error("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）"
+            log.error("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）事件：{}"
                     , methodName
                     , costMillis, this.getPoolSize(), this.getCorePoolSize(), this.getMaximumPoolSize()
-                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount());
+                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount()
+                    , JSONUtil.toJsonStr(event));
         }else if(costMillis > 1000 || queueSize > 1){
-            log.warn("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）"
+            log.warn("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）事件：{}"
                     , methodName
                     , costMillis, this.getPoolSize(), this.getCorePoolSize(), this.getMaximumPoolSize()
-                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount());
+                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount()
+                    , JSONUtil.toJsonStr(event));
         }else if(costMillis > 100) {
-            log.info("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）"
+            log.info("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）事件：{}"
                     , methodName
                     , costMillis, this.getPoolSize(), this.getCorePoolSize(), this.getMaximumPoolSize()
-                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount());
+                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount()
+                    , JSONUtil.toJsonStr(event));
         }else if(log.isDebugEnabled()){
-            log.debug("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）"
+            log.debug("异步事件监听{}，执行耗时毫秒：{}，当前线程数：{}（Core:{} Max:{}），剩余任务数：{}（Active:{} Completed:{} All:{}）事件：{}"
                     , methodName
                     , costMillis, this.getPoolSize(), this.getCorePoolSize(), this.getMaximumPoolSize()
-                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount());
+                    , queueSize, this.getActiveCount(), this.getCompletedTaskCount(), this.getTaskCount()
+                    , JSONUtil.toJsonStr(event));
         }
+    }
+
+    private Object getEvent(Runnable r) {
+        Object event = null;
+        try {
+            Field eventField = r.getClass().getDeclaredFields()[0];
+            eventField.setAccessible(true);
+            event = eventField.get(r);
+        } catch (Exception e) {
+            log.error("获取事件报错", e);
+        }
+        return event;
     }
 
     private static String geTargetMethodName(Runnable r) {
