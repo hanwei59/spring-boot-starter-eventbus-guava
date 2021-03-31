@@ -12,7 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.java>1.8</version.java>
         <version.spring-boot>1.5.7.RELEASE</version.spring-boot>
-        <guava.version>27.1-jre</guava.version>
+        <guava.version>29.0-jre</guava.version>
         <version.lombok>1.16.20</version.lombok>
         <java.version>1.8</java.version>
     </properties>
